@@ -1,16 +1,20 @@
-import yfinance as yf
-import pandas as pd
-import numpy as np
 from datetime import datetime
+
+import numpy as np
+import pandas as pd
+import yfinance as yf
 
 # 자산 목록
 fixed_assets = ['IWD', 'GLD', 'IEF']
-timing_assets = ['QQQ', 'SHY']  # 나스닥 100 지수(QQQ)와 미국 단기국채(SHY)
+timing_assets = ['QQQ', 'SHY']
+benchmark_asset = '^GSPC'
+cash_equiv = 'BIL'
 
 # 데이터 다운로드
 start_date = '2010-01-01'
 end_date = datetime.today().strftime('%Y-%m-%d')
-data = yf.download(fixed_assets + timing_assets + ['^GSPC'], start=start_date, end=end_date)['Adj Close']
+all_assets = fixed_assets + timing_assets + [benchmark_asset] + [cash_equiv]
+data = yf.download(all_assets, start=start_date, end=end_date)['Adj Close']
 
 # 특정 날짜 입력 받기
 input_date_str = input("Enter the date (YYYY-MM-DD): ")
@@ -22,10 +26,10 @@ unemployment_rate = pd.Series(np.random.rand(len(data)), index=data.index)  # �
 unemployment_rate_ma = unemployment_rate.rolling(window=12).mean()
 
 # S&P 500 200일 이동평균
-sp500_ma200 = data['^GSPC'].rolling(window=200).mean()
+sp500_ma200 = data[benchmark_asset].rolling(window=200).mean()
 
 # 매수 전략 결정
-if data['^GSPC'].loc[input_date] < sp500_ma200.loc[input_date] and unemployment_rate.loc[input_date] > \
+if data[benchmark_asset].loc[input_date] < sp500_ma200.loc[input_date] and unemployment_rate.loc[input_date] > \
         unemployment_rate_ma.loc[input_date]:
     selected_timing_asset = 'SHY'
 else:
@@ -39,9 +43,19 @@ portfolio = {
     selected_timing_asset: 0.25
 }
 
-# 결과 출력
+# S&P 500 및 실업률 데이터 출력
+sp500_current = data[benchmark_asset].loc[input_date]
+sp500_ma200_current = sp500_ma200.loc[input_date]
+unemployment_current = unemployment_rate.loc[input_date]
+unemployment_ma_current = unemployment_rate_ma.loc[input_date]
+
 print(f"Date: {input_date_str}")
-print("Portfolio Allocation:")
+print("S&P 500 Current Price:", sp500_current)
+print("S&P 500 200-Day Moving Average:", sp500_ma200_current)
+print("Current Unemployment Rate:", unemployment_current)
+print("12-Month Moving Average Unemployment Rate:", unemployment_ma_current)
+
+print("\nPortfolio Allocation:")
 for asset, allocation in portfolio.items():
     print(f"{asset}: {allocation * 100:.2f}%")
 
